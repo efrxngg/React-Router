@@ -1,0 +1,5 @@
+Configuracion proyecto
+npm install standar -D 
+
+Para instalar react router version exacta
+npm install react-router-dom -E
