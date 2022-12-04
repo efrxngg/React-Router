@@ -1,6 +1,6 @@
 // import reactLogo from './assets/react.svg'
-import { Route, Routes, Link, useParams, Outlet } from 'react-router-dom';
-import { Product } from './domain/entities';
+import { Route, Routes, Link, useParams, Outlet, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from './AuthContext'
 import './App.css'
 
 // Diferencia entre un elemento y un componente
@@ -56,7 +56,46 @@ const ProductDetails = () => {
   return <h1>Product Detalle {product_name}</h1>
 }
 
+const NavLinkPersonalizado = ({ to, children, ...props }) => {
+  return (
+    <NavLink
+      {...props}
+      className={({ isActive }) => { return isActive ? 'isActive' : undefined }}
+      to={to}
+    >
+      {children}
+    </NavLink>
+  );
+}
+
 const NotFound = () => <h1>Not Found</h1>
+
+const Login = () => {
+  const { login } = useAuth()
+
+  const navigate = useNavigate()
+
+  // Aqui tenemos informacion de donde ha venido
+  const location = useLocation()
+
+  // Navegacion programatica
+  const handleClick = () => {
+    login()
+    navigate(location.state?.location?.pathname ?? "/")
+  }
+  return (<button onClick={handleClick}>Login</button>)
+}
+
+// Tambien se puede envolver tantas rutas como quieras
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth()
+  // Para saber la ruta actual
+  const location = useLocation()
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ location }} />
+  }
+  return children
+}
 
 function App() {
 
@@ -66,8 +105,8 @@ function App() {
         <h1>Empresa x</h1>
         <nav>
           <ul>
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/search-page">Search Page</Link></li>
+            <li><NavLinkPersonalizado to="/">Home</NavLinkPersonalizado></li>
+            <li><NavLinkPersonalizado to="/search-page">Search Page</NavLinkPersonalizado></li>
           </ul>
         </nav>
       </header>
@@ -75,9 +114,10 @@ function App() {
       {/* Para indicar las Rutas que tiene nuestra aplicacion */}
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/search-page" element={<SearchPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/search-page" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
         {/* Rutas anidada */}
-        <Route path="/products/:product_name" element={<Products />} >
+        <Route path="/products/:product_name" element={<ProtectedRoute><Products /></ProtectedRoute>} >
           <Route path='details' element={<ProductDetails />} />
         </Route>
         <Route path='*' element={<NotFound />} />
